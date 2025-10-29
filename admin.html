@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>IAIWAF Admin Upload</title>
+  <script type="module" src="firebase.js"></script>
+  <script type="module">
+    import { ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+    import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    let file = null;
+
+    window.handleFileChange = (e) => {
+      file = e.target.files[0];
+      const preview = document.getElementById("preview");
+      if (!file) return;
+      preview.src = URL.createObjectURL(file);
+      preview.style.display = "block";
+    };
+
+    window.handleUpload = async () => {
+      const title = document.getElementById("title").value;
+      if (!file || !title) return alert("Please add a title and choose a file.");
+
+      const status = document.getElementById("status");
+      const progressBar = document.getElementById("progress");
+      status.textContent = "Uploading...";
+
+      const storageRef = ref(window.storage, `videos/${Date.now()}_${file.name}`);
+      const uploadTask = uploadBytesResumable(storageRef, file);
+
+      uploadTask.on(
+        "state_changed",
+        (snapshot) => {
+          const percent = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+          progressBar.value = percent;
+          status.textContent = `Uploading... ${percent}%`;
+        },
+        (error) => {
+          console.error(error);
+          status.textContent = "❌ Upload failed.";
+        },
+        async () => {
+          const url = await getDownloadURL(uploadTask.snapshot.ref);
+          await addDoc(collection(window.db, "videos"), {
+            title,
+            url,
+            createdAt: serverTimestamp(),
+          });
+          status.textContent = "✅ Upload successful!";
+          file = null;
+          document.getElementById("title").value = "";
+          document.getElementById("file").value = "";
+          progressBar.value = 0;
+          document.getElementById("preview").style.display = "none";
+        }
+      );
+    };
+  </script>
+  <style>
+    body { background:black; color:red; font-family:Arial; text-align:center; padding:2rem; }
+    input, button { padding:10px; border:none; border-radius:6px; margin:5px; }
+    input[type="text"], input[type="file"] { background:#222; color:white; }
+    button { background:red; color:white; cursor:pointer; }
+    button:hover { background:darkred; }
+  </style>
+</head>
+<body>
+  <h1>IAIWAF Admin Upload</h1>
+  <input type="text" id="title" placeholder="Title" />
+  <input type="file" id="file" accept="video/*" onchange="handleFileChange(event)" />
+  <br/>
+  <video id="preview" controls style="display:none;width:300px;margin-top:10px;border-radius:10px"></video>
+  <br/>
+  <progress id="progress" value="0" max="100" style="width:300px"></progress>
+  <br/>
+  <button onclick="handleUpload()">Upload</button>
+  <p id="status"></p>
+</body>
+</html>
