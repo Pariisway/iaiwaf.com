@@ -1,14 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>IAIWAF Admin Upload</title>
-  <script type="module" src="firebase.js"></script>
+  <script type="module">
+    // Paste the Firebase SDK snippet from step 1 here
+  </script>
   <script type="module">
     import { ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
     import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-    import { db, storage } from "../lib/firebase.js";
-    
+
     let file = null;
 
     window.handleFileChange = (e) => {
